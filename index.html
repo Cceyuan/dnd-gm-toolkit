@@ -386,7 +386,7 @@
 <div class="modal-overlay" id="settingsOverlay">
   <div class="modal" id="settingsModal">
     <h2>⚙️ API Settings</h2>
-    <p>Enter your <a href="https://platform.deepseek.com" target="_blank">DeepSeek API key</a> to power the generators.<br>Free to register, dirt cheap to use (~¥0.001 per generation).</p>
+    <p>The toolkit works out of the box with a default key.<br>Want to use your own? Paste your <a href="https://platform.deepseek.com" target="_blank">DeepSeek API key</a> below (optional).</p>
     <form id="apiKeyForm">
       <input type="password" id="apiKeyInput" placeholder="sk-xxxxxxxxxxxxxxxx" autocomplete="off">
       <div class="error-msg" id="apiKeyError">Please enter a valid key starting with "sk-".</div>
@@ -522,12 +522,6 @@ document.querySelectorAll('.generator-form').forEach(form => {
 // ── Generate ──
 async function generate(type, params) {
   const apiKey = getApiKey();
-
-  // No API key set → show settings
-  if (!apiKey) {
-    document.getElementById('settingsOverlay').classList.add('visible');
-    return;
-  }
 
   const usage = getUsage();
   if (!usage.emailCollected && usage.count >= DAILY_LIMIT) {

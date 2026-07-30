@@ -72,7 +72,10 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Invalid generator type. Use: npc, tavern, encounter' });
   }
 
-  if (!apiKey || !apiKey.startsWith('sk-')) {
+  // Use server key by default, fall back to user's own key
+  const key = process.env.DEEPSEEK_API_KEY || apiKey;
+
+  if (!key || !key.startsWith('sk-')) {
     return res.status(400).json({
       error: 'missing_key',
       message: 'Please enter your DeepSeek API key in Settings. Get one free at platform.deepseek.com'
@@ -86,7 +89,7 @@ module.exports = async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify({
         model: 'deepseek-chat',
