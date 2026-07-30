@@ -1,0 +1,11 @@
+{
+  "name": "dnd-gm-toolkit",
+  "version": "1.0.0",
+  "description": "AI-powered D&D Game Master Toolkit — powered by DeepSeek",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  }
+}

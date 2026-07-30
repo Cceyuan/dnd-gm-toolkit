@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dungeon Master's Toolkit — AI-Powered D&D Generator</title>
+<meta name="description" content="Free AI-powered D&D 5e tools for Game Masters. Generate NPCs, taverns, and encounters in seconds.">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --surface2: #222240;
+    --border: #2a2a4a;
+    --gold: #d4a843;
+    --gold-dim: #8b6914;
+    --text: #e0d6c2;
+    --text-dim: #8a8478;
+    --red: #c0392b;
+    --red-soft: #e74c3c;
+    --green: #27ae60;
+    --radius: 8px;
+    --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-display: 'Georgia', 'Times New Roman', serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(180, 140, 50, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(100, 60, 120, 0.04) 0%, transparent 50%);
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    padding: 48px 20px 32px;
+    position: relative;
+  }
+  header .icon { font-size: 48px; margin-bottom: 12px; }
+  header h1 {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+  }
+  header p {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    margin-top: 8px;
+    max-width: 480px;
+    margin-inline: auto;
+    line-height: 1.5;
+  }
+  .settings-btn {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .settings-btn:hover { color: var(--gold); border-color: var(--gold-dim); }
+  .settings-btn.has-key { color: var(--green); border-color: var(--green); }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 16px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-family: var(--font-body);
+    border-radius: var(--radius) var(--radius) 0 0;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: var(--text); border-color: var(--gold-dim); }
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--gold);
+    border-color: var(--gold-dim);
+    border-bottom-color: var(--surface2);
+    z-index: 1;
+  }
+  .tab-btn .emoji { margin-right: 6px; }
+
+  /* ── Main ── */
+  main { max-width: 720px; margin: 0 auto; padding: 0 20px 60px; }
+  .panel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) var(--radius);
+    padding: 32px;
+    margin-top: -1px;
+  }
+
+  /* ── Forms ── */
+  .generator-form { display: block; }
+  .generator-form.hidden { display: none; }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  input, select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: var(--font-body);
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--gold); }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a8478' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+  .generate-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: #1a1a0a;
+    border: none;
+    padding: 14px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: var(--font-body);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    letter-spacing: 0.03em;
+  }
+  .generate-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(180, 140, 40, 0.3);
+  }
+  .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .remaining {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-top: 12px;
+  }
+  .remaining span { color: var(--gold); font-weight: 600; }
+
+  /* ── Result ── */
+  .result { margin-top: 28px; display: none; }
+  .result.visible { display: block; }
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    line-height: 1.7;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+  }
+  .result-card h1, .result-card h2, .result-card h3 {
+    color: var(--gold);
+    font-family: var(--font-display);
+    margin: 16px 0 6px;
+  }
+  .result-card h2 { font-size: 1.15rem; }
+  .result-card h3 { font-size: 1.05rem; }
+  .result-card strong { color: #f0d080; }
+  .result-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .copy-btn, .regenerate-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-family: var(--font-body);
+    transition: all 0.2s;
+  }
+  .copy-btn:hover, .regenerate-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  /* ── Loading ── */
+  .loading { display: none; text-align: center; padding: 40px 0; }
+  .loading.visible { display: block; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--text-dim); font-size: 0.9rem; }
+
+  /* ── Modals ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal {
+    background: var(--surface2);
+    border: 1px solid var(--gold-dim);
+    border-radius: 12px;
+    padding: 36px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+  }
+  .modal h2 { font-family: var(--font-display); color: var(--gold); font-size: 1.3rem; margin-bottom: 8px; }
+  .modal p { color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; font-size: 0.9rem; }
+  .modal p a { color: var(--gold); }
+  .modal input { margin-bottom: 12px; padding: 12px 16px; font-size: 1rem; }
+  .modal .submit-btn {
+    width: 100%;
+    background: var(--gold);
+    color: #1a1a0a;
+    border: none;
+    padding: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .modal .secondary-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-decoration: underline;
+  }
+  .modal .error-msg {
+    color: var(--red-soft);
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    display: none;
+  }
+  .modal.success .modal-body { display: none; }
+  .modal .success-msg { display: none; color: var(--green); font-size: 1rem; }
+  .modal.success .success-msg { display: block; }
+  .modal .hint {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+    opacity: 0.7;
+  }
+
+  .error-banner {
+    background: #2a1015;
+    border: 1px solid var(--red);
+    color: var(--red-soft);
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-top: 16px;
+    display: none;
+    font-size: 0.9rem;
+  }
+  .error-banner.visible { display: block; }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    padding: 0 20px 40px;
+  }
+  footer a { color: var(--gold-dim); text-decoration: none; }
+  footer a:hover { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="settings-btn" id="settingsBtn" title="Settings — Set your DeepSeek API Key">⚙️</button>
+  <div class="icon">🐉</div>
+  <h1>Dungeon Master's Toolkit</h1>
+  <p>AI-powered generators for your D&D 5e table. Spend less time prepping, more time playing.</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="npc"><span class="emoji">🧙</span> NPC Generator</button>
+  <button class="tab-btn" data-tab="tavern"><span class="emoji">🍺</span> Tavern Generator</button>
+  <button class="tab-btn" data-tab="encounter"><span class="emoji">⚔️</span> Quick Encounter</button>
+</div>
+
+<main>
+  <div class="panel">
+    <!-- NPC Form -->
+    <form id="form-npc" class="generator-form">
+      <div class="form-row">
+        <div><label>Race</label><select name="race"><option value="Any">🎲 Any (surprise me)</option><option>Human</option><option>Elf</option><option>Dwarf</option><option>Halfling</option><option>Dragonborn</option><option>Tiefling</option><option>Half-Orc</option><option>Gnome</option><option>Firbolg</option><option>Tabaxi</option><option>Goblin</option><option>Kenku</option><option>Warforged</option><option>Aasimar</option><option>Other exotic race</option></select></div>
+        <div><label>Class / Profession</label><select name="class"><option value="Any">🎲 Any (surprise me)</option><option>Fighter</option><option>Wizard</option><option>Rogue</option><option>Cleric</option><option>Paladin</option><option>Ranger</option><option>Bard</option><option>Druid</option><option>Warlock</option><option>Sorcerer</option><option>Artificer</option><option>Blacksmith</option><option>Merchant</option><option>Innkeeper</option><option>Scholar</option><option>Criminal</option></select></div>
+      </div>
+      <div class="form-row">
+        <div><label>Role in Story</label><select name="role"><option value="Quest-giver or notable townsperson">Quest-giver</option><option value="Ally or companion">Ally / Companion</option><option value="Hidden antagonist">Hidden Villain</option><option value="Comic relief character">Comic Relief</option><option value="Mysterious stranger">Mysterious Stranger</option><option value="Merchant or artisan">Merchant / Artisan</option></select></div>
+        <div><label>Personality Tone</label><select name="tone"><option value="Any (pick something distinctive)">🎲 Any (surprise me)</option><option value="Gruff but kind-hearted">Gruff but kind</option><option value="Charming and enigmatic">Charming & enigmatic</option><option value="Paranoid and twitchy">Paranoid & twitchy</option><option value="Wise and melancholic">Wise & melancholic</option><option value="Bombastic and theatrical">Bombastic & theatrical</option><option value="Cold and calculating">Cold & calculating</option></select></div>
+      </div>
+      <button type="submit" class="generate-btn">✨ Generate NPC</button>
+      <div class="remaining">Free generations today: <span class="count">3</span></div>
+    </form>
+
+    <!-- Tavern Form -->
+    <form id="form-tavern" class="generator-form hidden">
+      <div class="form-row">
+        <div><label>Name Style</label><select name="style"><option value="Any">🎲 Any (surprise me)</option><option value="Classic fantasy (e.g. The Prancing Pony)">Classic Fantasy</option><option value="Humorous or pun-based">Humorous / Punny</option><option value="Dark and ominous">Dark & Ominous</option><option value="Cozy and welcoming">Cozy & Welcoming</option><option value="Exotic and mysterious">Exotic & Mysterious</option></select></div>
+        <div><label>Location Type</label><select name="location"><option value="Any">🎲 Any (surprise me)</option><option value="Bustling city slums">City Slums</option><option value="Deep in an ancient forest">Ancient Forest</option><option value="Dwarven mountain stronghold">Dwarven Stronghold</option><option value="Coastal fishing port">Coastal Port</option><option value="Underground cavern network">Underground Cavern</option><option value="Desert caravan stop">Desert Caravan Stop</option><option value="Floating city in the clouds">Floating City</option></select></div>
+      </div>
+      <button type="submit" class="generate-btn">🍺 Generate Tavern</button>
+      <div class="remaining">Free generations today: <span class="count">3</span></div>
+    </form>
+
+    <!-- Encounter Form -->
+    <form id="form-encounter" class="generator-form hidden">
+      <div class="form-row">
+        <div><label>Party Level</label><select name="level"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option><option value="6">Level 6</option><option value="7">Level 7</option><option value="8">Level 8</option><option value="10">Level 10</option><option value="12">Level 12</option><option value="15">Level 15</option><option value="20">Level 20</option></select></div>
+        <div><label>Party Size</label><select name="size"><option value="3">3 players</option><option value="4" selected>4 players</option><option value="5">5 players</option><option value="6">6 players</option></select></div>
+      </div>
+      <div class="form-row">
+        <div><label>Environment</label><select name="environment"><option value="Any">🎲 Any (surprise me)</option><option value="Dark forest clearing at dusk">Dark Forest</option><option value="Ancient dungeon chamber">Dungeon Chamber</option><option value="Mountain pass during a storm">Mountain Pass</option><option value="Flooded underground temple">Flooded Temple</option><option value="Burning village">Burning Village</option><option value="Icy tundra with hidden crevasses">Icy Tundra</option><option value="Crowded city streets">City Streets</option><option value="Ship deck during a storm">Ship at Sea</option></select></div>
+        <div><label>Difficulty</label><select name="difficulty"><option value="Easy">Easy</option><option value="Medium" selected>Medium</option><option value="Hard">Hard</option><option value="Deadly">Deadly</option></select></div>
+      </div>
+      <button type="submit" class="generate-btn">⚔️ Generate Encounter</button>
+      <div class="remaining">Free generations today: <span class="count">3</span></div>
+    </form>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Summoning from the elder scrolls...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error-banner" id="error"></div>
+
+    <!-- Result -->
+    <div class="result" id="result">
+      <div class="result-card" id="resultContent"></div>
+      <div class="result-actions">
+        <button class="copy-btn" id="copyBtn">📋 Copy to Clipboard</button>
+        <button class="regenerate-btn" id="regenerateBtn">🔁 Regenerate</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>Made for Game Masters ⚔️ — Powered by DeepSeek. Built with ❤️ and AI.</p>
+</footer>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsOverlay">
+  <div class="modal" id="settingsModal">
+    <h2>⚙️ API Settings</h2>
+    <p>Enter your <a href="https://platform.deepseek.com" target="_blank">DeepSeek API key</a> to power the generators.<br>Free to register, dirt cheap to use (~¥0.001 per generation).</p>
+    <form id="apiKeyForm">
+      <input type="password" id="apiKeyInput" placeholder="sk-xxxxxxxxxxxxxxxx" autocomplete="off">
+      <div class="error-msg" id="apiKeyError">Please enter a valid key starting with "sk-".</div>
+      <button type="submit" class="submit-btn">💾 Save Key</button>
+    </form>
+    <button class="secondary-btn" id="clearKeyBtn">🗑️ Remove saved key</button>
+    <div class="hint">Your key is stored only in your browser. Never sent to our servers — it goes directly to DeepSeek.</div>
+  </div>
+</div>
+
+<!-- Email Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-body">
+      <h2>⚡ Unlock Unlimited Generations</h2>
+      <p>Drop your email for <strong>early access to unlimited use</strong> — plus new features first.</p>
+      <form id="emailForm">
+        <input type="email" name="email" placeholder="your@email.com" required autocomplete="email">
+        <div class="error-msg" id="emailError">Please enter a valid email address.</div>
+        <button type="submit" class="submit-btn">🔓 Unlock & Continue</button>
+      </form>
+      <button class="secondary-btn" id="laterBtn">Maybe later — back to the game</button>
+    </div>
+    <div class="success-msg">
+      <h2>📬 Welcome to the party!</h2>
+      <p>Check your inbox. In the meantime, enjoy unlimited generations for today.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'dmtk_usage';
+const DAILY_LIMIT = 3;
+let currentTab = 'npc';
+let currentParams = null;
+
+// ── API Key ──
+function getApiKey() {
+  return localStorage.getItem('dmtk_api_key') || '';
+}
+function saveApiKey(key) {
+  localStorage.setItem('dmtk_api_key', key);
+  updateSettingsBtn();
+}
+function clearApiKey() {
+  localStorage.removeItem('dmtk_api_key');
+  updateSettingsBtn();
+}
+function updateSettingsBtn() {
+  const btn = document.getElementById('settingsBtn');
+  if (getApiKey()) {
+    btn.classList.add('has-key');
+    btn.title = 'Settings — DeepSeek API Key is set ✅';
+  } else {
+    btn.classList.remove('has-key');
+    btn.title = 'Settings — Set your DeepSeek API Key (required)';
+  }
+}
+
+// ── Settings Modal ──
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  document.getElementById('apiKeyInput').value = getApiKey();
+  document.getElementById('apiKeyError').style.display = 'none';
+  document.getElementById('settingsOverlay').classList.add('visible');
+});
+
+document.getElementById('apiKeyForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-')) {
+    document.getElementById('apiKeyError').style.display = 'block';
+    return;
+  }
+  document.getElementById('apiKeyError').style.display = 'none';
+  saveApiKey(key);
+  document.getElementById('settingsOverlay').classList.remove('visible');
+});
+
+document.getElementById('clearKeyBtn').addEventListener('click', () => {
+  clearApiKey();
+  document.getElementById('apiKeyInput').value = '';
+});
+
+document.getElementById('settingsOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'settingsOverlay') {
+    document.getElementById('settingsOverlay').classList.remove('visible');
+  }
+});
+
+// ── Usage tracking ──
+function getUsage() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const today = new Date().toDateString();
+    if (data.date !== today) return { date: today, count: 0, emailCollected: false };
+    return data;
+  } catch { return { date: new Date().toDateString(), count: 0, emailCollected: false }; }
+}
+function saveUsage(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function updateRemaining() {
+  const usage = getUsage();
+  const remaining = Math.max(0, DAILY_LIMIT - usage.count);
+  document.querySelectorAll('.remaining .count').forEach(el => { el.textContent = remaining; });
+  if (usage.emailCollected) {
+    document.querySelectorAll('.remaining').forEach(el => {
+      el.innerHTML = '<span style="color:#27ae60">✦</span> Unlimited early access — welcome!';
+    });
+  }
+}
+
+// ── Tabs ──
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab = btn.dataset.tab;
+    document.querySelectorAll('.generator-form').forEach(f => f.classList.add('hidden'));
+    document.getElementById('form-' + currentTab).classList.remove('hidden');
+    hideResult(); hideError();
+  });
+});
+
+// ── Forms ──
+document.querySelectorAll('.generator-form').forEach(form => {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    currentParams = Object.fromEntries(formData.entries());
+    await generate(currentTab, currentParams);
+  });
+});
+
+// ── Generate ──
+async function generate(type, params) {
+  const apiKey = getApiKey();
+
+  // No API key set → show settings
+  if (!apiKey) {
+    document.getElementById('settingsOverlay').classList.add('visible');
+    return;
+  }
+
+  const usage = getUsage();
+  if (!usage.emailCollected && usage.count >= DAILY_LIMIT) {
+    showModal(); return;
+  }
+
+  showLoading(); hideResult(); hideError();
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, params, apiKey })
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      if (data.error === 'invalid_key') {
+        showError('API key is invalid. Check it in Settings (⚙️ top right).');
+      } else if (data.error === 'missing_key') {
+        document.getElementById('settingsOverlay').classList.add('visible');
+      } else {
+        showError(data.message || 'Something went wrong. Please try again.');
+      }
+      hideLoading(); return;
+    }
+
+    usage.count = (usage.count || 0) + 1;
+    usage.date = new Date().toDateString();
+    saveUsage(usage);
+    updateRemaining();
+
+    hideLoading();
+    document.getElementById('resultContent').innerHTML = markdownToHtml(data.generated);
+    document.getElementById('result').classList.add('visible');
+  } catch (err) {
+    hideLoading();
+    showError('Could not reach the server. Check your connection and try again.');
+  }
+}
+
+// ── Markdown → HTML ──
+function markdownToHtml(md) {
+  return md
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '• $1')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(?!<[h\/]|•|<br|<p|<strong|<em)(.+)$/gm, '<p>$1</p>');
+}
+
+// ── UI helpers ──
+function showLoading() {
+  document.getElementById('loading').classList.add('visible');
+  document.querySelectorAll('.generate-btn').forEach(b => b.disabled = true);
+}
+function hideLoading() {
+  document.getElementById('loading').classList.remove('visible');
+  document.querySelectorAll('.generate-btn').forEach(b => b.disabled = false);
+}
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = msg; el.classList.add('visible'); }
+function hideError() { document.getElementById('error').classList.remove('visible'); }
+function hideResult() { document.getElementById('result').classList.remove('visible'); }
+
+// ── Result actions ──
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const text = document.getElementById('resultContent').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy to Clipboard'; }, 2000);
+  });
+});
+document.getElementById('regenerateBtn').addEventListener('click', () => {
+  if (currentParams) generate(currentTab, currentParams);
+});
+
+// ── Email Modal ──
+function showModal() {
+  document.getElementById('modalOverlay').classList.add('visible');
+  document.getElementById('modal').classList.remove('success');
+  document.getElementById('emailError').style.display = 'none';
+  document.querySelector('#emailForm').reset();
+  hideLoading();
+}
+function hideModal() { document.getElementById('modalOverlay').classList.remove('visible'); }
+
+document.getElementById('emailForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = e.target.email.value.trim();
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    document.getElementById('emailError').style.display = 'block'; return;
+  }
+  document.getElementById('emailError').style.display = 'none';
+  const usage = getUsage();
+  usage.emailCollected = true; saveUsage(usage);
+  const emails = JSON.parse(localStorage.getItem('dmtk_emails') || '[]');
+  emails.push({ email, date: new Date().toISOString(), source: 'dnd_toolkit' });
+  localStorage.setItem('dmtk_emails', JSON.stringify(emails));
+  document.getElementById('modal').classList.add('success');
+  setTimeout(() => { hideModal(); updateRemaining(); if (currentParams) generate(currentTab, currentParams); }, 2000);
+});
+
+document.getElementById('laterBtn').addEventListener('click', hideModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'modalOverlay') hideModal();
+});
+
+// ── Init ──
+updateRemaining();
+updateSettingsBtn();
+</script>
+</body>
+</html>
